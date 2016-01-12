@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+
+		<title>Webpack; the how and the why</title>
+
+		<meta name="description" content="A presentation on the Webpack build system">
+		<meta name="author" content="Kerry Gallagher">
+
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+
+		<link rel="stylesheet" href="css/reveal.css">
+		<link rel="stylesheet" href="css/theme/white.css" id="theme">
+
+		<!-- Code syntax highlighting -->
+		<link rel="stylesheet" href="lib/css/tomorrow.css">
+
+		<!-- Printing and PDF exports -->
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+	</head>
+
+	<body>
+
+		<div class="reveal">
+
+			<!-- Any section element inside of this container is displayed as a slide -->
+			<div class="slides">
+				<section>
+					<h1>Webpack</h1>
+					<h3>Who: <a href="http://www.kerrygallagher.co.uk">Kerry Gallagher</a> | <a href="http://www.twitter.com/Kerry350">@Kerry350</a></h3>
+					<h4>What: Front-end Engineer</h4>
+					<h5>Where: <a href="https://www.serverdensity.com/">Server Density</a></h5>
+				</section>
+
+				<section>
+					<h1>What is Webpack?</h1>
+					<p>"Webpack is a module bundler. Webpack takes modules with dependencies and generates static assets representing those modules."</p>
+				</section>
+
+				<section>
+					<h1>Why?</h1>
+					<ul>
+						<li><a href="https://webpack.github.io/docs/hot-module-replacement.html">Hot Module Replacement</a></li>
+						<li><a href="https://webpack.github.io/docs/code-splitting.html">Code Splitting</a></li>
+						<li>Easy integration with npm and seamless handling of multiple module formats (AMD, CommonJS etc)</li>
+						<li><a href="https://webpack.github.io/docs/loaders.html">Loaders</a></li>
+						<li>Configuration files are easy to understand</li>
+						<li><a href="https://webpack.github.io/docs/list-of-plugins.html"> Easy to make the leap from development to production with the likes of plugins</a></li>
+					</ul>
+				</section>
+
+				<section>
+					<h1>Easy configuration</h1>
+
+<pre>
+<code>
+var path = require('path')
+var webpack = require('webpack')
+
+module.exports = {
+    // The base directory for resolving the entry option
+    context: __dirname + "/app/coffeescript",
+
+    // The entry point for the bundle
+    entry: "./bootstrap.coffee",
+
+    // Various output options, to give us a single bundle.js file with everything resolved and concatenated
+    output: {
+        path: __dirname + '/app/webpack',
+        filename: "bundle.js",
+        publicPath: '/app/webpack/',
+        pathinfo: true
+    },
+
+    // Where to resolve our loaders
+    resolveLoader: {
+        modulesDirectories: ['node_modules']
+    },
+
+    resolve: {
+        // Directories that contain our modules
+        root: [path.join(__dirname, "./app/coffeescript"), path.join(__dirname, "./app/templates")],
+        // Extensions used to resolve modules
+        extensions: ['', '.js', '.csx', '.csx.coffee', '.coffee'],
+        // Replace modules with other modules or paths (like the 'paths' option with Require.js)
+        alias: {
+            some_lib: path.join(__dirname, "some/location")
+        }
+    },
+
+    // Source map option. Eval provides a little less info, but is faster
+    devtool: 'eval',
+
+    // Our loader configuration
+    module: {
+        loaders: [
+          { test: /\.csx.coffee$/, loaders: ['coffee', 'cjsx']},
+          { test: /^(?=.*coffee)(?!.*csx).*/, loader: 'coffee' }, // Contains .coffee but NOT .csx
+          { test: /\.html$/, loader: "mustache"},
+          { test: /\.json$/, loader: "json"}
+        ]
+    },
+
+    // Include mocks for when node.js specific modules may be required
+    node: {
+        fs: 'empty',
+        net: 'empty',
+        tls: 'empty'
+    }
+};
+</code>
+</pre>
+				<p><i>Some lines left out for brevity</i></p>
+				</section>
+
+				<section>
+					<h1>Entry > Ouput</h1>
+<pre>
+	<code>
+entry: "./bootstrap.coffee",
+
+output: {
+    path: __dirname + '/app/webpack',
+    filename: "bundle.js"
+}
+	</code>
+</pre>
+
+<p>Run with <code>webpack --watch</code></p>
+				</section>
+
+				<section>
+					<h1>Loaders</h1>
+
+					<p>"Loaders allow you to preprocess files as you require() or “load” them"</p>
+
+<pre>
+<code>
+module: {
+    loaders: [
+      { test: /\.csx.coffee$/, loaders: ['coffee', 'cjsx']},
+      { test: /^(?=.*coffee)(?!.*csx).*/, loader: 'coffee' },
+      { test: /\.html$/, loader: "mustache"},
+      { test: /\.json$/, loader: "json"}
+    ]
+}
+</code>
+</pre>
+
+				<p>Loaders can be resolved from anywhere, <code>node_modules</code> is conveniently used by default</p>
+
+				<p>They can be chained, making them very powerful</p>
+				</section>
+
+				<section>
+					<h1>Loaders allow us to handle assets in new ways</h1>
+					<p>Add in a style loader</p>
+
+<pre>
+<code>
+{ test: /\.css$/, loader: 'style!css'}
+</code>
+</pre>
+				<p>And <code>require()</code> CSS</p>
+
+<pre>
+<code>
+CSS = require('./site.css')
+</code>
+</pre>
+			</section>
+
+			<section>
+				<h1>Wait...what?</h1>
+
+				<p>By default a <pre><code><style></style></code></pre> tag will be added per stylesheet that is loaded.</p>
+
+				<p>Can be utilised in production by making use of the ExtractTextPlugin</p>
+<pre>
+<code>
+{ test: /\.css$/, loader: ExtractTextPlugin.extract("style-loader", "css-loader")}
+</code>
+</pre>
+
+<pre>
+<code>
+plugins: [new ExtractTextPlugin("app/assets/css/site.css")]
+</code>
+</pre>
+
+			</section>
+
+			<section>
+				<h1>Hot Module Replacement</h1>
+
+				<p><img src="hmr.gif" alt="HMR working" /></p>
+			</section>
+
+			<section>
+				<h1>HMR, how?</h1>
+				<p>First of all <code>output</code> was updated. This makes use of <code>webpack-dev-server</code>.</p>
+
+<pre>
+<code>
+output: {
+    path: __dirname + '/app/webpack',
+    filename: "bundle.js",
+    publicPath: "http://localhost:8080/app/webpack"
+}
+</code>
+</pre>
+
+			<p>And an extra loader to process CJSX files</p>
+<pre>
+<code>
+{ test: /\.csx.coffee$/, loaders: ['react-hot', 'coffee', 'cjsx']}
+</code>
+</pre>
+			<p>Run with: <code>webpack-dev-server --inline --hot</code></p>
+
+			</section>
+
+			<section>
+
+			<h1>Time to go live!</h1>
+
+			<p>Webpack includes numerous plugins to handle many of the common production requirements</p>
+
+<pre>
+<code>
+plugins: [
+	new webpack.optimize.UglifyJsPlugin({
+		mangle: {
+			except: ['$super', '$', 'exports']
+		},
+		output: {
+			comments: false
+		}
+	}),
+
+	new webpack.optimize.DedupePlugin(),
+
+	new webpack.optimize.OccurenceOrderPlugin(false)
+]
+</code>
+</pre>
+			</section>
+
+			<section>
+				<h1>Struggles :(</h1>
+
+				<ul>
+					<li>Mustache templates closed like this: <code>{{ /</code></li>
+					<li>We were using Lodash like this: <code>_(somethingToWorkOn)</code>, but we weren't calling <code>.value()</code> in all cases</li>
+					<li>React.js components weren't rendering where a lowercase letter had been used</li>
+				</ul>
+			</section>
+
+			<section>
+				<h1>Conclusion</h1>
+
+				<p>Webpack has offered us a lot of productivity improvements, and an improved workflow, with a much simpler approach than the Grunt based system we were using</p>
+			</section>
+			</div>
+		</div>
+
+		<script src="lib/js/head.min.js"></script>
+		<script src="js/reveal.js"></script>
+
+		<script>
+
+			// Full list of configuration options available at:
+			// https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				controls: true,
+				progress: true,
+				history: true,
+				center: true,
+
+				transition: 'slide', // none/fade/slide/convex/concave/zoom
+
+				// Optional reveal.js plugins
+				dependencies: [
+					{ src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+					{ src: 'plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+					{ src: 'plugin/zoom-js/zoom.js', async: true },
+					{ src: 'plugin/notes/notes.js', async: true }
+				]
+			});
+
+		</script>
+
+	</body>
+</html>
